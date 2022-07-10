@@ -83,8 +83,6 @@ public class BWService : MonoBehaviour
         CreateStartNeedy();
         Debug.Log("[Black and White] Start Needy okay");
 
-        Harmony.DEBUG = true;
-
         Harmony _harmony = new Harmony("BlackAndWhiteKTANE");
 
         //We want to know when Black has been picked (to add White)
@@ -473,15 +471,15 @@ public class BWService : MonoBehaviour
     //        yield return instructions[i];
     //}
 
-    private static void LogMinus(int i)
-    {
-        Debug.Log("KWMinusThree " + i);
-    }
+    //private static void LogMinus(int i)
+    //{
+    //    Debug.Log("KWMinusThree " + i);
+    //}
 
-    private static void LogLoad(int i)
-    {
-        Debug.Log("KWLoad " + i);
-    }
+    //private static void LogLoad(int i)
+    //{
+    //    Debug.Log("KWLoad " + i);
+    //}
 
     private static void ClearRepository()
     {

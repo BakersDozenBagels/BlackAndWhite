@@ -35,6 +35,9 @@ public class BlackScript : BlackWhiteScript
 
     private void Press(int j)
     {
+        if(Errored)
+            return;
+
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, _buttons[j].transform);
         _buttons[j].AddInteractionPunch(0.1f);
 
@@ -110,13 +113,15 @@ public class BlackScript : BlackWhiteScript
 
     private void Update()
     {
-        if(!IsActive)
+        if(!IsActive || Errored)
             return;
         Partner.Module.SetNeedyTimeRemaining(Module.GetNeedyTimeRemaining());
     }
 
     private void LightsOff()
     {
+        if(Errored)
+            return;
         WhiteScript w = (WhiteScript)Partner;
         foreach(LightScript l in w.Lights)
             l.Off();
@@ -131,7 +136,9 @@ public class BlackScript : BlackWhiteScript
         if(w == null)
         {
             Error();
-            throw new Exception("Not enough Whites spawned!");
+            Log("Not enough Whites spawned!");
+            return;
+            //throw new Exception("Not enough Whites spawned!");
         }
         Partner = w;
         w.Partner = this;
@@ -154,6 +161,8 @@ public class BlackScript : BlackWhiteScript
     private static readonly string validChars = "1234";
     private IEnumerator ProcessTwitchCommand(string command)
     {
+        if(Errored)
+            yield break;
         command = command.Trim();
         if(command.All(c => validChars.Contains(c) || char.IsWhiteSpace(c)) && command.Any(c => validChars.Contains(c)))
         {
@@ -176,6 +185,8 @@ public class BlackScript : BlackWhiteScript
 
     private void TwitchHandleForcedSolve()
     {
+        if(Errored)
+            return;
         StartCoroutine(AutoSolve());
     }
 

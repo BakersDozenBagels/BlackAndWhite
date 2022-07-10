@@ -16,6 +16,7 @@ public abstract class BlackWhiteScript : MonoBehaviour
 
     public KMNeedyModule Module;
     protected KMAudio Audio;
+    protected bool Errored;
 
     protected static int Identifier;
 
@@ -56,5 +57,6 @@ public abstract class BlackWhiteScript : MonoBehaviour
     {
         _identifier.text = "!!!";
         _identifier.color = Color.red;
+        Errored = true;
     }
 }
