@@ -25,6 +25,9 @@ public class BWService : MonoBehaviour
     private static int _blackCount; //Accurate for the current bomb. This is reset when we spwan Whites.
     private static Action<object> _activateNeedy;
 
+    private static object _propertyKey;
+    private static readonly List<AddOnConditionData> _propertyAdded = new List<AddOnConditionData>();
+
     public static void ActivateNeedy(object NeedyComponent)
     {
         if(_activateNeedy != null)
@@ -200,9 +203,61 @@ public class BWService : MonoBehaviour
             }
         }
 
+        Debug.Log("[Black and White] Registering API hook...");
+        ModdedAPI.AddProperty("LoadOnCondition", null, new Action<object>(SetLoadOnCondition));
+
         Debug.Log("[Black and White] End hook process.");
 
         _hasPatched = true;
+    }
+
+    private void SetLoadOnCondition(object d)
+    {
+        if(!(d is IDictionary))
+            throw new Exception("SetLoadOnCondition expected an IDictionary, got " + d.GetType().Name);
+        IDictionary data = (IDictionary)d;
+
+        object prefab = data["Prefab"];
+        Func<object, int> condition = (Func<object, int>)data["Condition"];
+        string id;
+        Component fab;
+
+        KMBombModule mod = ((GameObject)prefab).GetComponentInChildren<KMBombModule>();
+        if(mod == null)
+        {
+            KMNeedyModule needymod = ((GameObject)prefab).GetComponentInChildren<KMNeedyModule>();
+            if(needymod == null)
+                throw new Exception("SetLoadOnCondition That's not a module.");
+            else
+            {
+                fab = Instantiate(needymod.gameObject, transform.parent).GetComponent(ReflectionHelper.FindTypeInGame("BombComponent"));
+                Type mnc = ReflectionHelper.FindTypeInGame("ModNeedyComponent");
+                FieldInfo fi = mnc.GetField("module", ReflectionHelper.Flags);
+
+                fi.SetValue(fab, fab.GetComponent<KMBombModule>());
+
+                id = needymod.ModuleType;
+            }
+        }
+        else
+        {
+            fab = Instantiate(mod.gameObject, transform.parent).GetComponent(ReflectionHelper.FindTypeInGame("BombComponent"));
+            Type mnc = ReflectionHelper.FindTypeInGame("ModBombComponent");
+            FieldInfo fi = mnc.GetField("module", ReflectionHelper.Flags);
+
+            fi.SetValue(fab, fab.GetComponent<KMBombModule>());
+
+            id = mod.ModuleType;
+        }
+
+        AddOnConditionData aocd = new AddOnConditionData()
+        {
+            Id = id,
+            Condition = condition,
+            Prefab = fab
+        };
+
+        _propertyAdded.Add(aocd);
     }
 
     private IEnumerator TweaksRepoFix()
@@ -513,6 +568,44 @@ public class BWService : MonoBehaviour
         for(; i < instructions.Count; i++)
         {
             //Keep the original method until just before this log message
+            if(!instructions[i].Is(OpCodes.Ldstr, "Instantiating RequiresTimerVisibility components on {0}"))
+            {
+                yield return instructions[i];
+                continue;
+            }
+
+            //Load needed data onto the stack (The methoid call will consume these)
+            CodeInstruction ld1 = new CodeInstruction(instructions[i])
+            {
+                opcode = OpCodes.Ldarg_0,
+                operand = null
+            };
+            CodeInstruction ld2 = new CodeInstruction(instructions[i])
+            {
+                opcode = OpCodes.Ldarg_1,
+                operand = null
+            };
+            CodeInstruction ld3 = new CodeInstruction(instructions[i])
+            {
+                opcode = OpCodes.Ldloc_S,
+                operand = 8
+            };
+
+            yield return ld1;
+            yield return ld2;
+            yield return ld3;
+            //Call our method to spawn Whites
+            yield return CodeInstruction.Call(
+                typeof(BWService),
+                "LoadOnCondition",
+                parameters: new Type[] { typeof(object), typeof(object), typeof(object) },
+                generics: new Type[0]
+            );
+            break;
+        }
+        for(; i < instructions.Count; i++)
+        {
+            //Keep the original method until just before this log message
             if(!instructions[i].Is(OpCodes.Ldstr, "Instantiating remaining components on any valid face."))
             {
                 yield return instructions[i];
@@ -694,6 +787,36 @@ public class BWService : MonoBehaviour
         _blackCount = 0;
     }
 
+    private static void LoadOnCondition(object instance, object settings, object frontFace)
+    {
+        Type t = instance.GetType();
+
+        Debug.LogFormat("[Black and White] Spawning per condition...");
+
+        foreach(AddOnConditionData d in _propertyAdded)
+        {
+            int count = d.Condition(settings);
+            for(int i = 0; i < count; ++i)
+            {
+                //We simulate the Game's calculations for which face to spawn modules on
+                //Notably, if DBML is enabled, this simply adds them to its pool of modules, and we will have to do this again.
+                IList vbf = t.Field<IList>("validBombFaces", instance);
+                List<object> l = vbf.Cast<object>().ToList();
+
+                if(l.Count == 0)
+                    Debug.LogFormat("[Black and White] There's no room to spawn {0}.", d.Id);
+                else
+                {
+                    t.MethodCall("InstantiateComponent", instance, new object[] {
+                        l[t.Field<System.Random>("rand", instance).Next(0, l.Count)],
+                        d.Prefab,
+                        settings }
+                    );
+                }
+            }
+        }
+    }
+
     private static void SelectRandomPostfix(string __result)
     {
         if(__result != "blackModule")
@@ -750,5 +873,12 @@ public class BWService : MonoBehaviour
             Debug.LogFormat("[Black and White] IDs removed from Mod Manager: {0}", removed.Join(", "));
         else
             Debug.LogFormat("[Black and White] No IDs removed from Mod Manager.");
+    }
+
+    private sealed class AddOnConditionData
+    {
+        public object Prefab;
+        public Func<object, int> Condition = _ => 0;
+        public string Id = null;
     }
 }
