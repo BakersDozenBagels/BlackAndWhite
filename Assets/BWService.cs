@@ -829,6 +829,11 @@ public class BWService : MonoBehaviour
 
     private static void BCPCountPostfix(object pool, ref int __result)
     {
+        if(pool.GetType().Field<int>("SpecialComponentType", cp) == 2)
+        {
+            __result *= 2;
+            return;
+        }
         List<string> types = pool.GetType().Field<List<string>>("ModTypes", pool);
         if(types == null || types.Count == 0)
             return;
