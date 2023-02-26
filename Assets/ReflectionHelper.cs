@@ -15,6 +15,11 @@ public static class ReflectionHelper
         });
     }
 
+    public static Type FindType(string fullName, string assemblyName = null)
+    {
+        return AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetSafeTypes()).FirstOrDefault(t => t.FullName != null && t.FullName.Equals(fullName) && (assemblyName == null || t.Assembly.GetName().Name.Equals(assemblyName)));
+    }
+
     public static Type FindType(string fullName)
     {
         return AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetSafeTypes()).FirstOrDefault(t =>

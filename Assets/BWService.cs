@@ -115,7 +115,7 @@ public class BWService : MonoBehaviour
         Debug.Log("[Black and White] Count Mods okay");
 
         //Tweaks doesn't use the method above, and counts modules itself
-        t = ReflectionHelper.FindType("BetterCasePicker");
+        t = ReflectionHelper.FindType("BetterCasePicker", "TweaksAssembly");
         if(t != null)
         {
             //We technically modify a nested type auto-generated for a lambda expression.

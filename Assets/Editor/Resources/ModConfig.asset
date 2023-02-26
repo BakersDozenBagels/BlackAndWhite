@@ -13,11 +13,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: blackWhiteModule
   title: Black and White
-  author: BakersDozenBagels
-  description: 'A Black will always spawn with a paired White. Pretty cool, eh?
-
-
-    TP supported.'
-  version: 1.4
+  author: eXish
+  description: "Use the number of lit lights on White to determine how many times
+    to press the buttons on Black. These needies will always spawn with each other,
+    and in order to do this requires the Tweaks mod.\n\nHTML: https://ktane.timwi.de/HTML/Black.html
+    or https://ktane.timwi.de/HTML/White.html\r\nPDF: https://ktane.timwi.de/PDF/Black.pdf
+    or https://ktane.timwi.de/PDF/White.pdf\n\nBlack (blackModule) v1.5.2\nWhite (whiteModule)
+    v1.5.2\nModules by BakersDozenBagels, maintained by eXish\r\nTwitch Plays supported"
+  version: 1.5.2
   outputFolder: build
   previewImage: {fileID: 2800000, guid: 9ab4fc2b9863d82469613d9c59f52174, type: 3}
